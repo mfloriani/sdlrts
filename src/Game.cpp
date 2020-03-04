@@ -2,7 +2,7 @@
 #include "Constants.h"
 // #include <string>
 
-Game::Game() : _isRunning(false)
+Game::Game() : _isRunning(false), _startSelection(), _endSelection(), _selectionRect()
 {
 
 }
@@ -38,19 +38,92 @@ void Game::Input()
   SDL_Event e;
   while (SDL_PollEvent(&e))
   {
-      if (e.type == SDL_QUIT) 
+    switch (e.type)
+    {
+    case SDL_QUIT:
+    {
+      _isRunning = false;
+      break;
+    }
+    case SDL_KEYDOWN:
+    {
+      _isRunning = false;
+      break;
+    }
+    case SDL_MOUSEMOTION:
+    {
+      int x, y;
+      Uint32 buttonState = SDL_GetMouseState(&x, &y);
+      if(buttonState & SDL_BUTTON(SDL_BUTTON_LEFT))
       {
-          _isRunning = false;
-          break;
+        SDL_Log("Left button pressed during motion");
+        _endSelection = {x, y};
+        UpdateSelectionRect();
       }
-      else if(e.type == SDL_KEYDOWN)
+      if(buttonState & SDL_BUTTON(SDL_BUTTON_RIGHT))
       {
-        if(e.key.keysym.sym == SDLK_ESCAPE)
+        SDL_Log("Right button pressed during motion");
+      }
+      if(buttonState & SDL_BUTTON(SDL_BUTTON_MIDDLE))
+      {
+        SDL_Log("Middle button pressed during motion");
+      }
+      break;
+    }
+    case SDL_MOUSEBUTTONDOWN:
+    case SDL_MOUSEBUTTONUP:
+    {
+      Uint8 button = e.button.button;
+      Uint8 pressed = e.button.state == SDL_PRESSED;
+      Uint8 released = e.button.state == SDL_RELEASED;
+
+      if(button == SDL_BUTTON_LEFT)
+      {
+        if(pressed)
         {
-          _isRunning = false;
-          break;
+          SDL_Log("Left button pressed");
+          _startSelection = {e.button.x, e.button.y};
+          _endSelection = _startSelection;
+          
+          // SDL_Rect rect = {e.button.x, e.button.y, 10, 10};
+          // _objects.push_back(rect);
+          
+        }
+        if(released)
+        {
+          SDL_Log("Left button released");
+          _startSelection = {};
+          _endSelection = {};
+          UpdateSelectionRect();
         }
       }
+      if(button == SDL_BUTTON_RIGHT)
+      {
+        if(pressed)
+        {
+          SDL_Log("Right button pressed");
+        }
+        if(released)
+        {
+          SDL_Log("Right button released");
+        }
+      }
+      if(button == SDL_BUTTON_MIDDLE)
+      {
+        if(pressed)
+        {
+          SDL_Log("Middle button pressed");
+        }
+        if(released)
+        {
+          SDL_Log("Middle button released");
+        }
+      }
+      break;
+    }
+    default:
+      break;
+    }      
   }
 }
 
@@ -68,6 +141,16 @@ void Game::Render()
 {
   SDL_SetRenderDrawColor(_renderer, 0, 0, 0, 255);
   SDL_RenderClear(_renderer);
+
+  // SDL_SetRenderDrawColor(_renderer, 255, 0, 0, 0);
+  // for(auto rect : _objects)
+  // {
+  //   SDL_RenderDrawRect(_renderer, &rect);
+  // }
+
+  SDL_SetRenderDrawColor(_renderer, 0, 255, 0, 0);
+  SDL_RenderDrawRect(_renderer, &_selectionRect);
+
   SDL_RenderPresent(_renderer);
 }
 
@@ -76,4 +159,11 @@ void Game::Quit()
   SDL_DestroyRenderer(_renderer);
 	SDL_DestroyWindow(_window);
 	SDL_Quit();
+}
+
+void Game::UpdateSelectionRect()
+{
+  int width = _endSelection.x - _startSelection.x;
+  int height = _endSelection.y - _startSelection.y;
+  _selectionRect = {_startSelection.x, _startSelection.y, width, height};
 }
