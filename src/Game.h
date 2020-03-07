@@ -5,28 +5,36 @@
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_ttf.h>
 #include <vector>
+#include "GameObject.h"
+
 
 class Game
 {
 private:
   SDL_Window* _window;
-  SDL_Renderer* _renderer;
+  
   bool _isRunning;
   float ticksLastFrame;
 
-  std::vector<SDL_Rect> _objects;
+  std::vector<GameObject*> _gameobjects;
+
   SDL_Point _startSelection;
   SDL_Point _endSelection;
   SDL_Rect _selectionRect;
+  SDL_Rect _selectionCollider;
+  bool _isSelecting;
 
   void UpdateSelectionRect();
+  void GameObjectsSelection();
 
 public:
+  static SDL_Renderer* _renderer;
+
   Game();
   ~Game(){};
   bool Init(int width, int height);
   void Quit();
-  void Input();
+  void ProcessInput();
   void Update();
   void Render();
   bool IsRunning()const { return _isRunning; }

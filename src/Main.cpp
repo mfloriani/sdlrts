@@ -8,7 +8,7 @@ int main(int argc, char* argv[])
 
 	while (game.IsRunning())
 	{
-		game.Input();
+		game.ProcessInput();
 		game.Update();
 		game.Render();
 	}
