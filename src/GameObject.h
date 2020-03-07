@@ -14,13 +14,19 @@ public:
 
   void Select();
   void Deselect();
+  void Move(glm::vec2 location);
 
   SDL_Rect* GetCollider() const;
 
 private:
   glm::vec2 _position;
+  glm::vec2 _direction;
   SDL_Rect* _collider;
   SDL_Color _color;
+
+  glm::vec2 _targetLocation;
+  bool _hasTarget;
+
 };
 
 #endif

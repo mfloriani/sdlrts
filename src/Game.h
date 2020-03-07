@@ -28,6 +28,10 @@ private:
   void UpdateSelectionRect();
   void GameObjectSelection();
 
+  std::vector<SDL_Rect> _targets;
+  std::vector<GameObject*> _selectedUnits;
+  void MoveSelectedUnits(glm::vec2 target);
+
 public:
   static SDL_Renderer* _renderer;
 

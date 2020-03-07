@@ -110,6 +110,11 @@ void Game::ProcessInput()
         if (released)
         {
           SDL_Log("Right button released");
+          glm::vec2 target = glm::vec2(e.button.x, e.button.y);
+          SDL_Rect rect = {target.x, target.y, 10, 10};
+          _targets.push_back(rect);
+          
+          MoveSelectedUnits(target);
         }
       }
       if (button == SDL_BUTTON_MIDDLE)
@@ -145,10 +150,18 @@ void Game::Update()
   // dt = std::to_string(deltatime);
   // SDL_Log(dt.c_str());
 
+  //TODO: perhaps I dont need too var to check selections
   if (_rangeSelection || _singleSelection)
   {
     GameObjectSelection();
   }
+  
+  for (auto go : _gameobjects)
+  {
+    go->Update();
+  }
+
+  
 }
 
 void Game::Render()
@@ -163,10 +176,16 @@ void Game::Render()
 
   if (_rangeSelection)
   {
-    SDL_SetRenderDrawColor(_renderer, 0, 255, 0, 0);
+    SDL_SetRenderDrawColor(_renderer, 0, 255, 0, 255);
     SDL_RenderDrawRect(_renderer, &_selectionRect);
   }
 
+  for(auto target : _targets)
+  {
+    SDL_SetRenderDrawColor(_renderer, 252, 244, 3, 255);
+    SDL_RenderDrawRect(_renderer, &target);
+  }
+  
   SDL_RenderPresent(_renderer);
 }
 
@@ -182,7 +201,7 @@ void Game::UpdateSelectionRect()
   int width = _endSelection.x - _startSelection.x;
   int height = _endSelection.y - _startSelection.y;
   _selectionRect = {_startSelection.x, _startSelection.y, width, height};
-  SDL_Log("_selectionRect %d %d %d %d", _selectionRect.x, _selectionRect.y, _selectionRect.w, _selectionRect.h);
+  // SDL_Log("_selectionRect %d %d %d %d", _selectionRect.x, _selectionRect.y, _selectionRect.w, _selectionRect.h);
 
   _selectionCollider = _selectionRect;
   if(_selectionRect.w < 0)
@@ -195,25 +214,35 @@ void Game::UpdateSelectionRect()
     _selectionCollider.y = _endSelection.y;
     _selectionCollider.h = glm::abs(_selectionCollider.h);
   }
-  SDL_Log("_selectionCollider %d %d %d %d", _selectionCollider.x, _selectionCollider.y, _selectionCollider.w, _selectionCollider.h);
+  // SDL_Log("_selectionCollider %d %d %d %d", _selectionCollider.x, _selectionCollider.y, _selectionCollider.w, _selectionCollider.h);
 }
 
 void Game::GameObjectSelection()
 {
   for (auto go : _gameobjects)
   {
-    SDL_Log("SDL_HasIntersection collider(%d %d %d %d)", _selectionCollider.x, _selectionCollider.y, _selectionCollider.w, _selectionCollider.h);
-    SDL_Log("SDL_HasIntersection go(%d %d %d %d)", go->GetCollider()->x, go->GetCollider()->y, go->GetCollider()->w, go->GetCollider()->h);
+    // SDL_Log("SDL_HasIntersection collider(%d %d %d %d)", _selectionCollider.x, _selectionCollider.y, _selectionCollider.w, _selectionCollider.h);
+    // SDL_Log("SDL_HasIntersection go(%d %d %d %d)", go->GetCollider()->x, go->GetCollider()->y, go->GetCollider()->w, go->GetCollider()->h);
     if (SDL_HasIntersection(&_selectionCollider, go->GetCollider()))
     {
-      SDL_Log("Select");
+      // SDL_Log("Select");
       go->Select();
+      _selectedUnits.push_back(go);
     }
     else
     {
-      SDL_Log("Deselect");
+      // SDL_Log("Deselect");
       go->Deselect();
+      _selectedUnits.clear();
     }
     
+  }
+}
+
+void Game::MoveSelectedUnits(glm::vec2 target)
+{
+  for (auto go : _selectedUnits)
+  {
+    go->Move(target);
   }
 }
