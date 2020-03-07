@@ -22,10 +22,11 @@ private:
   SDL_Point _endSelection;
   SDL_Rect _selectionRect;
   SDL_Rect _selectionCollider;
-  bool _isSelecting;
+  bool _rangeSelection;
+  bool _singleSelection;
 
   void UpdateSelectionRect();
-  void GameObjectsSelection();
+  void GameObjectSelection();
 
 public:
   static SDL_Renderer* _renderer;

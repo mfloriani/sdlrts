@@ -5,7 +5,7 @@
 
 SDL_Renderer *Game::_renderer;
 
-Game::Game() : _isRunning(false), _startSelection(), _endSelection(), _selectionRect(), _isSelecting(false)
+Game::Game() : _isRunning(false), _startSelection(), _endSelection(), _selectionRect(), _rangeSelection(false), _singleSelection(false)
 {
 }
 
@@ -59,7 +59,8 @@ void Game::ProcessInput()
       if (buttonState & SDL_BUTTON(SDL_BUTTON_LEFT))
       {
         SDL_Log("Left button pressed during motion");
-        _isSelecting = true;
+        _rangeSelection = true;
+        _singleSelection = false;
         _endSelection = {x, y};
         UpdateSelectionRect();
       }
@@ -85,16 +86,18 @@ void Game::ProcessInput()
         if (pressed)
         {
           SDL_Log("Left button pressed");
-          _isSelecting = true;
+          _singleSelection = true;
+          _rangeSelection = false;
           _startSelection = {e.button.x, e.button.y};
-          _endSelection = _startSelection;
+          _endSelection = {_startSelection.x + 1, _startSelection.y + 1};
+          UpdateSelectionRect();
         }
         if (released)
         {
           SDL_Log("Left button released");
-          _isSelecting = false;
-          _startSelection = {};
-          _endSelection = {};
+          _rangeSelection = false;
+          _singleSelection = false;
+          _endSelection = {_startSelection.x + 1, _startSelection.y + 1};
           UpdateSelectionRect();
         }
       }
@@ -142,9 +145,9 @@ void Game::Update()
   // dt = std::to_string(deltatime);
   // SDL_Log(dt.c_str());
 
-  if (_isSelecting)
+  if (_rangeSelection || _singleSelection)
   {
-    GameObjectsSelection();
+    GameObjectSelection();
   }
 }
 
@@ -158,7 +161,7 @@ void Game::Render()
     go->Render();
   }
 
-  if (_isSelecting)
+  if (_rangeSelection)
   {
     SDL_SetRenderDrawColor(_renderer, 0, 255, 0, 0);
     SDL_RenderDrawRect(_renderer, &_selectionRect);
@@ -179,7 +182,7 @@ void Game::UpdateSelectionRect()
   int width = _endSelection.x - _startSelection.x;
   int height = _endSelection.y - _startSelection.y;
   _selectionRect = {_startSelection.x, _startSelection.y, width, height};
-  // SDL_Log("_selectionRect %d %d %d %d", _selectionRect.x, _selectionRect.y, _selectionRect.w, _selectionRect.h);
+  SDL_Log("_selectionRect %d %d %d %d", _selectionRect.x, _selectionRect.y, _selectionRect.w, _selectionRect.h);
 
   _selectionCollider = _selectionRect;
   if(_selectionRect.w < 0)
@@ -192,20 +195,23 @@ void Game::UpdateSelectionRect()
     _selectionCollider.y = _endSelection.y;
     _selectionCollider.h = glm::abs(_selectionCollider.h);
   }
-  // SDL_Log("_selectionCollider %d %d %d %d", _selectionCollider.x, _selectionCollider.y, _selectionCollider.w, _selectionCollider.h);
+  SDL_Log("_selectionCollider %d %d %d %d", _selectionCollider.x, _selectionCollider.y, _selectionCollider.w, _selectionCollider.h);
 }
 
-void Game::GameObjectsSelection()
+void Game::GameObjectSelection()
 {
-  //TODO: test collision between selectionRect and all game objects
   for (auto go : _gameobjects)
   {
+    SDL_Log("SDL_HasIntersection collider(%d %d %d %d)", _selectionCollider.x, _selectionCollider.y, _selectionCollider.w, _selectionCollider.h);
+    SDL_Log("SDL_HasIntersection go(%d %d %d %d)", go->GetCollider()->x, go->GetCollider()->y, go->GetCollider()->w, go->GetCollider()->h);
     if (SDL_HasIntersection(&_selectionCollider, go->GetCollider()))
     {
+      SDL_Log("Select");
       go->Select();
     }
     else
     {
+      SDL_Log("Deselect");
       go->Deselect();
     }
     
