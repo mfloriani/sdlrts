@@ -17,7 +17,8 @@ bool Game::Init(int width, int height)
     return false;
   }
 
-  _window = SDL_CreateWindow("sdlrts", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_BORDERLESS);
+  //TODO: uncomment SDL_WINDOW_BORDERLESS
+  _window = SDL_CreateWindow("sdlrts", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, NULL /*SDL_WINDOW_BORDERLESS*/);
   if (_window == NULL)
   {
     SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to create window! SDL_Error: %s", SDL_GetError());
@@ -89,16 +90,21 @@ void Game::ProcessInput()
           _singleSelection = true;
           _rangeSelection = false;
           _startSelection = {e.button.x, e.button.y};
-          _endSelection = {_startSelection.x + 1, _startSelection.y + 1};
+          _endSelection = {_startSelection.x + 10, _startSelection.y + 10};
           UpdateSelectionRect();
         }
         if (released)
         {
           SDL_Log("Left button released");
+
+          if (_singleSelection)
+          {
+            _endSelection = {_startSelection.x + 10, _startSelection.y + 10};
+          }
+          UpdateSelectionRect();
+
           _rangeSelection = false;
           _singleSelection = false;
-          _endSelection = {_startSelection.x + 1, _startSelection.y + 1};
-          UpdateSelectionRect();
         }
       }
       if (button == SDL_BUTTON_RIGHT)
@@ -113,7 +119,7 @@ void Game::ProcessInput()
           glm::vec2 target = glm::vec2(e.button.x, e.button.y);
           SDL_Rect rect = {target.x, target.y, 10, 10};
           _targets.push_back(rect);
-          
+
           MoveSelectedUnits(target);
         }
       }
@@ -150,18 +156,15 @@ void Game::Update()
   // dt = std::to_string(deltatime);
   // SDL_Log(dt.c_str());
 
-  //TODO: perhaps I dont need too var to check selections
-  if (_rangeSelection || _singleSelection)
-  {
-    GameObjectSelection();
-  }
-  
   for (auto go : _gameobjects)
   {
     go->Update();
   }
 
-  
+  if (_rangeSelection || _singleSelection)
+  {
+    GameObjectSelection();
+  }
 }
 
 void Game::Render()
@@ -180,12 +183,12 @@ void Game::Render()
     SDL_RenderDrawRect(_renderer, &_selectionRect);
   }
 
-  for(auto target : _targets)
+  for (auto target : _targets)
   {
     SDL_SetRenderDrawColor(_renderer, 252, 244, 3, 255);
     SDL_RenderDrawRect(_renderer, &target);
   }
-  
+
   SDL_RenderPresent(_renderer);
 }
 
@@ -204,12 +207,12 @@ void Game::UpdateSelectionRect()
   // SDL_Log("_selectionRect %d %d %d %d", _selectionRect.x, _selectionRect.y, _selectionRect.w, _selectionRect.h);
 
   _selectionCollider = _selectionRect;
-  if(_selectionRect.w < 0)
+  if (_selectionRect.w < 0)
   {
     _selectionCollider.x = _endSelection.x;
     _selectionCollider.w = glm::abs(_selectionCollider.w);
   }
-  if(_selectionRect.h < 0)
+  if (_selectionRect.h < 0)
   {
     _selectionCollider.y = _endSelection.y;
     _selectionCollider.h = glm::abs(_selectionCollider.h);
@@ -219,6 +222,7 @@ void Game::UpdateSelectionRect()
 
 void Game::GameObjectSelection()
 {
+  _selectedUnits.clear();
   for (auto go : _gameobjects)
   {
     // SDL_Log("SDL_HasIntersection collider(%d %d %d %d)", _selectionCollider.x, _selectionCollider.y, _selectionCollider.w, _selectionCollider.h);
@@ -233,9 +237,7 @@ void Game::GameObjectSelection()
     {
       // SDL_Log("Deselect");
       go->Deselect();
-      _selectedUnits.clear();
     }
-    
   }
 }
 

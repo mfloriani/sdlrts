@@ -20,7 +20,8 @@ void GameObject::Update()
   if(_hasTarget)
   {
     float distance = glm::distance(_position, _targetLocation);
-    SDL_Log("Distance %f", distance);
+    //SDL_Log("Distance %f", distance);
+    //TODO: handle fix distance value
     if(distance < 1)
     {
       _hasTarget = false;
