@@ -2,8 +2,11 @@
 #include "Constants.h"
 // #include <string>
 #include "../lib/glm/glm.hpp"
+#include "TextureManager.h"
 
 SDL_Renderer *Game::_renderer;
+
+SDL_Texture* sampleTexture = nullptr;
 
 Game::Game() : _isRunning(false), _startSelection(), _endSelection(), _selectionRect(), _rangeSelection(false), _singleSelection(false)
 {
@@ -17,8 +20,7 @@ bool Game::Init(int width, int height)
     return false;
   }
 
-  //TODO: uncomment SDL_WINDOW_BORDERLESS
-  _window = SDL_CreateWindow("sdlrts", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, NULL /*SDL_WINDOW_BORDERLESS*/);
+  _window = SDL_CreateWindow("sdlrts", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_BORDERLESS);
   if (_window == NULL)
   {
     SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to create window! SDL_Error: %s", SDL_GetError());
@@ -31,6 +33,15 @@ bool Game::Init(int width, int height)
     SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to create window! SDL_Error: %s", SDL_GetError());
     return false;
   }
+
+	if (!(IMG_Init(IMG_INIT_PNG) & IMG_INIT_PNG))
+	{
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "SDL_image could not initialize! SDL_Image Error: %s", IMG_GetError());
+		return false;
+	}
+
+  //TODO: remove texture test
+  sampleTexture = TextureManager::Load("./assets/images/spritesheet_32x32.png");
 
   _isRunning = true;
   return true;
@@ -90,7 +101,7 @@ void Game::ProcessInput()
           _singleSelection = true;
           _rangeSelection = false;
           _startSelection = {e.button.x, e.button.y};
-          _endSelection = {_startSelection.x + 10, _startSelection.y + 10};
+          _endSelection = {_startSelection.x + 1, _startSelection.y + 1};
           UpdateSelectionRect();
         }
         if (released)
@@ -99,7 +110,7 @@ void Game::ProcessInput()
 
           if (_singleSelection)
           {
-            _endSelection = {_startSelection.x + 10, _startSelection.y + 10};
+            _endSelection = {_startSelection.x + 1, _startSelection.y + 1};
           }
           UpdateSelectionRect();
 
@@ -189,13 +200,20 @@ void Game::Render()
     SDL_RenderDrawRect(_renderer, &target);
   }
 
+  //TODO: remove texture test
+  SDL_Rect source{0,0,10,10};
+  SDL_Rect destination{0,0,200,100};
+  TextureManager::Render(sampleTexture, source, destination, SDL_FLIP_NONE);
+
   SDL_RenderPresent(_renderer);
 }
 
 void Game::Quit()
 {
+  SDL_DestroyTexture(sampleTexture);
   SDL_DestroyRenderer(_renderer);
   SDL_DestroyWindow(_window);
+  IMG_Quit();
   SDL_Quit();
 }
 

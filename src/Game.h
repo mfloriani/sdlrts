@@ -33,6 +33,7 @@ private:
   void MoveSelectedUnits(glm::vec2 target);
 
 public:
+  //TODO: review this public static var
   static SDL_Renderer* _renderer;
 
   Game();
