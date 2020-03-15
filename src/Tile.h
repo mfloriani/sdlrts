@@ -1,14 +1,14 @@
 #ifndef TILE_H
 #define TILE_H
 
+#include <SDL2/SDL.h>
 #include <string>
-#include "SDL2/SDL.h"
 #include "../lib/glm/glm.hpp"
 
 class Tile
 {
 public:
-  Tile(int x, int y, SDL_Rect source, std::string textureId);
+  Tile(int x, int y, SDL_Rect source, SDL_Texture* texture);
   ~Tile();
   void Render();
 

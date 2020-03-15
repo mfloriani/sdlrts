@@ -189,6 +189,11 @@ void Game::Render()
   SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
   SDL_RenderClear(renderer);
 
+  for(auto tile : _tiles)
+  {
+    tile->Render();
+  }
+
   for (auto go : _gameobjects)
   {
     go->Render();
@@ -211,6 +216,7 @@ void Game::Render()
   // SDL_Rect destination{0,0,200,100};
   // SDL_Texture* tex = assetManager->GetTexture("tiles-spritesheet");
   // TextureManager::Render(tex, source, destination, SDL_FLIP_NONE);
+  
 
   SDL_RenderPresent(renderer);
 }
@@ -306,8 +312,7 @@ void Game::LoadMap()
     
     SDL_Rect source = {(type-1) * TILE_SIZE, 0, TILE_SIZE, TILE_SIZE};
     
-    _tiles.push_back(new Tile(x, y, source, "tiles-spritesheet"));
-    
+    _tiles.push_back(new Tile(x, y, source, assetManager->GetTexture("tiles-spritesheet")));
     
     x += TILE_SIZE;
     if((i % width) == 0)

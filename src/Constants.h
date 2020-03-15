@@ -3,8 +3,8 @@
 
 //TODO: replace define per const
 
-#define WINDOW_WIDTH 800
-#define WINDOW_HEIGHT 600
+#define WINDOW_WIDTH 1600
+#define WINDOW_HEIGHT 900
 #define FPS 60
 #define FRAME_LENGTH 1000 / FPS
 
