@@ -1,5 +1,5 @@
 build:
-	g++ -w -std=c++17 -Wfatal-errors -m32 -static-libstdc++ \
+	g++ -g -w -std=c++17 -Wfatal-errors -m32 -static-libstdc++ \
 	./src/*.cpp \
 	-o sdlrts.exe \
 	-I"C:\libsdl\include" \

@@ -35,8 +35,8 @@ void GameObject::Update()
 
 void GameObject::Render()
 {
-  SDL_SetRenderDrawColor(Game::_renderer, _color.r, _color.g, _color.b, _color.a);
-  SDL_RenderFillRect(Game::_renderer, _collider);
+  SDL_SetRenderDrawColor(Game::renderer, _color.r, _color.g, _color.b, _color.a);
+  SDL_RenderFillRect(Game::renderer, _collider);
 }
 
 void GameObject::Select()

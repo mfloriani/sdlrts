@@ -1,15 +1,19 @@
 #include "Game.h"
 #include "Constants.h"
-// #include <string>
 #include "../lib/glm/glm.hpp"
 #include "TextureManager.h"
+#include "../lib/lua/sol.hpp"
+#include <iostream>
+#include <string>
+#include "AssetManager.h"
 
-SDL_Renderer *Game::_renderer;
 
-SDL_Texture* sampleTexture = nullptr;
+SDL_Renderer* Game::renderer;
+AssetManager* Game::assetManager = new AssetManager();
 
 Game::Game() : _isRunning(false), _startSelection(), _endSelection(), _selectionRect(), _rangeSelection(false), _singleSelection(false)
 {
+  // _assetManager = new AssetManager();
 }
 
 bool Game::Init(int width, int height)
@@ -27,8 +31,8 @@ bool Game::Init(int width, int height)
     return false;
   }
 
-  _renderer = SDL_CreateRenderer(_window, -1, SDL_RENDERER_ACCELERATED);
-  if (_renderer == NULL)
+  renderer = SDL_CreateRenderer(_window, -1, SDL_RENDERER_ACCELERATED);
+  if (renderer == NULL)
   {
     SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to create window! SDL_Error: %s", SDL_GetError());
     return false;
@@ -40,8 +44,14 @@ bool Game::Init(int width, int height)
 		return false;
 	}
 
-  //TODO: remove texture test
-  sampleTexture = TextureManager::Load("./assets/images/spritesheet_32x32.png");
+  // if(!AssetManager)
+  // {
+  //   SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "XXXXXXXXXXXXXXX");
+	// 	return false;
+  // }
+  assetManager->AddTexture("tiles-spritesheet", "./assets/images/spritesheet_32x32.png");
+  
+  LoadMap();
 
   _isRunning = true;
   return true;
@@ -180,8 +190,8 @@ void Game::Update()
 
 void Game::Render()
 {
-  SDL_SetRenderDrawColor(_renderer, 0, 0, 0, 255);
-  SDL_RenderClear(_renderer);
+  SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+  SDL_RenderClear(renderer);
 
   for (auto go : _gameobjects)
   {
@@ -190,28 +200,29 @@ void Game::Render()
 
   if (_rangeSelection)
   {
-    SDL_SetRenderDrawColor(_renderer, 0, 255, 0, 255);
-    SDL_RenderDrawRect(_renderer, &_selectionRect);
+    SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
+    SDL_RenderDrawRect(renderer, &_selectionRect);
   }
 
   for (auto target : _targets)
   {
-    SDL_SetRenderDrawColor(_renderer, 252, 244, 3, 255);
-    SDL_RenderDrawRect(_renderer, &target);
+    SDL_SetRenderDrawColor(renderer, 252, 244, 3, 255);
+    SDL_RenderDrawRect(renderer, &target);
   }
 
   //TODO: remove texture test
   SDL_Rect source{0,0,10,10};
   SDL_Rect destination{0,0,200,100};
-  TextureManager::Render(sampleTexture, source, destination, SDL_FLIP_NONE);
+  SDL_Texture* tex = assetManager->GetTexture("tiles-spritesheet");
+  TextureManager::Render(tex, source, destination, SDL_FLIP_NONE);
 
-  SDL_RenderPresent(_renderer);
+  SDL_RenderPresent(renderer);
 }
 
 void Game::Quit()
 {
-  SDL_DestroyTexture(sampleTexture);
-  SDL_DestroyRenderer(_renderer);
+  assetManager->Release();
+  SDL_DestroyRenderer(renderer);
   SDL_DestroyWindow(_window);
   IMG_Quit();
   SDL_Quit();
@@ -265,4 +276,35 @@ void Game::MoveSelectedUnits(glm::vec2 target)
   {
     go->Move(target);
   }
+}
+
+void Game::LoadMap()
+{
+  sol::state lua;
+  lua.open_libraries();
+  lua.script_file("./assets/maps/map.lua");
+
+  sol::table map = lua["map"];
+  int width = map["width"];
+  int height = map["height"];
+  sol::table tiles = map["tiles"];
+  SDL_Log("w=%i h=%i", width, height);
+  int x, y = 0;
+  int countX = 0;
+  for(int i = 1; i <= tiles.size(); ++i)
+  {
+    SDL_Log("i=%i type=%i x=%i  y=%i", i,  tiles.get<int>(i), x, y);
+    
+    
+    //_tiles.push_back(new Tile(x, y, source, "tiles-spritesheet"));
+    
+    x += TILE_SIZE;
+    if((i % width) == 0)
+    {
+      SDL_Log("<br> %i", i);
+      x = 0;
+      y += TILE_SIZE;
+    }
+  }
+
 }
