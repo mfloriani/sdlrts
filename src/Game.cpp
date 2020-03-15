@@ -6,6 +6,7 @@
 #include <iostream>
 #include <string>
 #include "AssetManager.h"
+#include "Tile.h"
 
 
 SDL_Renderer* Game::renderer;
@@ -13,7 +14,7 @@ AssetManager* Game::assetManager = new AssetManager();
 
 Game::Game() : _isRunning(false), _startSelection(), _endSelection(), _selectionRect(), _rangeSelection(false), _singleSelection(false)
 {
-  // _assetManager = new AssetManager();
+
 }
 
 bool Game::Init(int width, int height)
@@ -44,11 +45,6 @@ bool Game::Init(int width, int height)
 		return false;
 	}
 
-  // if(!AssetManager)
-  // {
-  //   SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "XXXXXXXXXXXXXXX");
-	// 	return false;
-  // }
   assetManager->AddTexture("tiles-spritesheet", "./assets/images/spritesheet_32x32.png");
   
   LoadMap();
@@ -211,10 +207,10 @@ void Game::Render()
   }
 
   //TODO: remove texture test
-  SDL_Rect source{0,0,10,10};
-  SDL_Rect destination{0,0,200,100};
-  SDL_Texture* tex = assetManager->GetTexture("tiles-spritesheet");
-  TextureManager::Render(tex, source, destination, SDL_FLIP_NONE);
+  // SDL_Rect source{0,0,10,10};
+  // SDL_Rect destination{0,0,200,100};
+  // SDL_Texture* tex = assetManager->GetTexture("tiles-spritesheet");
+  // TextureManager::Render(tex, source, destination, SDL_FLIP_NONE);
 
   SDL_RenderPresent(renderer);
 }
@@ -287,16 +283,31 @@ void Game::LoadMap()
   sol::table map = lua["map"];
   int width = map["width"];
   int height = map["height"];
+  int tileCount = map["tilecount"];
   sol::table tiles = map["tiles"];
   SDL_Log("w=%i h=%i", width, height);
+
+  //TODO: refactor
+  // SDL_Rect clips[tileCount+1];
+  // clips[0] = {};
+  // for(int i=1; i <= tileCount; ++i)
+  // {
+  //   SDL_Rect rect = {(i-1) * TILE_SIZE , 0, TILE_SIZE, TILE_SIZE};
+  //   clips[i] = rect;
+  //   SDL_Log("i=%i x=%i", i, rect.x);
+  // }
+
   int x, y = 0;
   int countX = 0;
   for(int i = 1; i <= tiles.size(); ++i)
   {
-    SDL_Log("i=%i type=%i x=%i  y=%i", i,  tiles.get<int>(i), x, y);
+    int type = tiles.get<int>(i);
+    SDL_Log("i=%i type=%i x=%i  y=%i", i, type, x, y);
     
+    SDL_Rect source = {(type-1) * TILE_SIZE, 0, TILE_SIZE, TILE_SIZE};
     
-    //_tiles.push_back(new Tile(x, y, source, "tiles-spritesheet"));
+    _tiles.push_back(new Tile(x, y, source, "tiles-spritesheet"));
+    
     
     x += TILE_SIZE;
     if((i % width) == 0)
