@@ -4,7 +4,7 @@
 const int WINDOW_WIDTH {1024};
 const int WINDOW_HEIGHT {768};
 
-//TODO: decide whether to use fixed or load from map file
+//TODO: decide whether should I use fixed or load from map file
 const int MAP_WIDTH {1600};
 const int MAP_HEIGHT {1184};
 

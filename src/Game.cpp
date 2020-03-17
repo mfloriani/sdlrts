@@ -39,6 +39,7 @@ bool Game::Init(int width, int height)
     SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to create window! SDL_Error: %s", SDL_GetError());
     return false;
   }
+  SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 
 	if (!(IMG_Init(IMG_INIT_PNG) & IMG_INIT_PNG))
 	{
@@ -59,6 +60,8 @@ void Game::ProcessInput()
   SDL_Event e;
   while (SDL_PollEvent(&e))
   {
+    //TODO: create commands from the inputs, store into an array and process it inside update()
+
     const Uint8* state = SDL_GetKeyboardState(NULL);
 
     switch (e.type)
@@ -163,6 +166,7 @@ void Game::ProcessInput()
 
           if (_singleSelection)
           {
+            //BUG: difficult to select object while is moving. Maybe create a bigger rect that has the click point as the center
             _endSelection = {_startSelection.x + 1, _startSelection.y + 1};
           }
           UpdateSelectionRect();
@@ -180,7 +184,8 @@ void Game::ProcessInput()
         if (released)
         {
           SDL_Log("Right button released");
-          glm::vec2 target = glm::vec2(e.button.x, e.button.y);
+          SDL_Point worldPoint = ScreenToWorldPoint(e.button.x, e.button.y);
+          glm::vec2 target {worldPoint.x, worldPoint.y};
           SDL_Rect rect = {target.x, target.y, 10, 10};
           _targets.push_back(rect);
 
@@ -192,9 +197,8 @@ void Game::ProcessInput()
         if (pressed)
         {
           SDL_Log("Middle button pressed");
-          glm::vec2 position;
-          position.x = e.button.x;
-          position.y = e.button.y;
+          SDL_Point worldPoint = ScreenToWorldPoint(e.button.x, e.button.y);
+          glm::vec2 position {worldPoint.x, worldPoint.y};
           GameObject *go = new GameObject(position);
           _gameobjects.push_back(go);
         }
@@ -256,13 +260,15 @@ void Game::Render()
 
   if (_rangeSelection)
   {
-    SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
-    SDL_RenderDrawRect(renderer, &_selectionRect);
+    SDL_SetRenderDrawColor(renderer, 0, 255, 0, 100);
+    SDL_RenderFillRect(renderer, &_selectionRect);
   }
 
   for (auto target : _targets)
   {
     SDL_SetRenderDrawColor(renderer, 252, 244, 3, 255);
+    target.x -= camera->x;
+    target.y -= camera->y;
     SDL_RenderDrawRect(renderer, &target);
   }
 
@@ -285,19 +291,20 @@ void Game::UpdateSelectionRect()
   _selectionRect = {_startSelection.x, _startSelection.y, width, height};
   // SDL_Log("_selectionRect %d %d %d %d", _selectionRect.x, _selectionRect.y, _selectionRect.w, _selectionRect.h);
 
-  SDL_Rect endSelectionWP {_endSelection.x + camera->x, _endSelection.y + camera->y};
-  SDL_Rect worldPoint {_selectionRect.x + camera->x, _selectionRect.y + camera->y, width, height };
+  SDL_Point startSelectionWorldPoint = ScreenToWorldPoint(_startSelection.x, _startSelection.y);
+  SDL_Point endSelectionWorldPoint = ScreenToWorldPoint(_endSelection.x, _endSelection.y);
+  SDL_Rect worldPoint { startSelectionWorldPoint.x, startSelectionWorldPoint.y, width, height };
   // SDL_Log("worldPoint %d %d %d %d", worldPoint.x, worldPoint.y, worldPoint.w, worldPoint.h);
 
   _selectionCollider = worldPoint;
   if (_selectionRect.w < 0)
   {
-    _selectionCollider.x = endSelectionWP.x;
+    _selectionCollider.x = endSelectionWorldPoint.x;
     _selectionCollider.w = glm::abs(_selectionCollider.w);
   }
   if (_selectionRect.h < 0)
   {
-    _selectionCollider.y = endSelectionWP.y;
+    _selectionCollider.y = endSelectionWorldPoint.y;
     _selectionCollider.h = glm::abs(_selectionCollider.h);
   }
   // SDL_Log("_selectionCollider %d %d %d %d", _selectionCollider.x, _selectionCollider.y, _selectionCollider.w, _selectionCollider.h);
@@ -305,7 +312,6 @@ void Game::UpdateSelectionRect()
 
 void Game::GameObjectSelection()
 {
-  //FIXME: selection not working when moving camera
   _selectedUnits.clear();
   for (auto go : _gameobjects)
   {
@@ -381,4 +387,9 @@ void Game::UpdateCamera(int x, int y)
   camera->y = camera->y > (MAP_HEIGHT - camera->h) ? (MAP_HEIGHT - camera->h) : camera->y;
 
   SDL_Log("camx=%i camy=%i", camera->x, camera->y);
+}
+
+SDL_Point Game::ScreenToWorldPoint(int x, int y)
+{
+  return SDL_Point({x + camera->x, y + camera->y});
 }

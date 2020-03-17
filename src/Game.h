@@ -55,6 +55,7 @@ public:
   void Render();
   bool IsRunning() const { return _isRunning; }
   void UpdateCamera(int x, int y);
+  SDL_Point ScreenToWorldPoint(int x, int y);
 };
 
 #endif
