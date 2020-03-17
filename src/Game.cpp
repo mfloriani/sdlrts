@@ -1,16 +1,17 @@
-#include "Game.h"
-#include "Constants.h"
-#include "../lib/glm/glm.hpp"
-#include "TextureManager.h"
-#include "../lib/lua/sol.hpp"
 #include <iostream>
 #include <string>
+#include "../lib/glm/glm.hpp"
+#include "../lib/lua/sol.hpp"
+#include "Game.h"
+#include "Constants.h"
+#include "TextureManager.h"
 #include "AssetManager.h"
 #include "Tile.h"
 
-
+//TODO: I might move these public static members to behind a const method
 SDL_Renderer* Game::renderer;
 AssetManager* Game::assetManager = new AssetManager();
+SDL_Rect* Game::camera = new SDL_Rect({ 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT});
 
 Game::Game() : _isRunning(false), _startSelection(), _endSelection(), _selectionRect(), _rangeSelection(false), _singleSelection(false)
 {
@@ -58,6 +59,8 @@ void Game::ProcessInput()
   SDL_Event e;
   while (SDL_PollEvent(&e))
   {
+    const Uint8* state = SDL_GetKeyboardState(NULL);
+
     switch (e.type)
     {
     case SDL_QUIT:
@@ -67,7 +70,51 @@ void Game::ProcessInput()
     }
     case SDL_KEYDOWN:
     {
-      _isRunning = false;
+
+      switch (e.key.keysym.sym)
+      {
+      case SDLK_ESCAPE:
+        {
+          _isRunning = false;
+        }
+        break;
+      
+      case SDLK_UP:
+      case SDLK_DOWN:
+      case SDLK_LEFT:
+      case SDLK_RIGHT:
+        {
+          if(state[SDL_SCANCODE_UP])
+          // if(e.key.keysym.sym == SDLK_UP)
+          {
+            SDL_Log("UP");
+            UpdateCamera(0, -CAMERA_VELOCITY);
+          }
+          if(state[SDL_SCANCODE_DOWN])
+          // if(e.key.keysym.sym == SDLK_DOWN)
+          {
+            SDL_Log("DOWN");
+            UpdateCamera(0, CAMERA_VELOCITY);
+          }
+          if(state[SDL_SCANCODE_LEFT])
+          // if(e.key.keysym.sym == SDLK_LEFT)
+          {
+            SDL_Log("LEFT");
+            UpdateCamera(-CAMERA_VELOCITY, 0);
+          }
+          if(state[SDL_SCANCODE_RIGHT])
+          // if(e.key.keysym.sym == SDLK_RIGHT)
+          {
+            SDL_Log("RIGHT");
+            UpdateCamera(CAMERA_VELOCITY, 0);
+          }
+        }
+        break;
+
+      default:
+        break;
+      }
+      
       break;
     }
     case SDL_MOUSEMOTION:
@@ -182,6 +229,11 @@ void Game::Update()
   {
     GameObjectSelection();
   }
+
+  for(auto tile : _tiles)
+  {
+    tile->Update();
+  }
 }
 
 void Game::Render()
@@ -191,7 +243,10 @@ void Game::Render()
 
   for(auto tile : _tiles)
   {
-    tile->Render();
+    if(SDL_HasIntersection(tile->Collider(), camera))
+    {
+      tile->Render();
+    }
   }
 
   for (auto go : _gameobjects)
@@ -210,13 +265,6 @@ void Game::Render()
     SDL_SetRenderDrawColor(renderer, 252, 244, 3, 255);
     SDL_RenderDrawRect(renderer, &target);
   }
-
-  //TODO: remove texture test
-  // SDL_Rect source{0,0,10,10};
-  // SDL_Rect destination{0,0,200,100};
-  // SDL_Texture* tex = assetManager->GetTexture("tiles-spritesheet");
-  // TextureManager::Render(tex, source, destination, SDL_FLIP_NONE);
-  
 
   SDL_RenderPresent(renderer);
 }
@@ -237,15 +285,19 @@ void Game::UpdateSelectionRect()
   _selectionRect = {_startSelection.x, _startSelection.y, width, height};
   // SDL_Log("_selectionRect %d %d %d %d", _selectionRect.x, _selectionRect.y, _selectionRect.w, _selectionRect.h);
 
-  _selectionCollider = _selectionRect;
+  SDL_Rect endSelectionWP {_endSelection.x + camera->x, _endSelection.y + camera->y};
+  SDL_Rect worldPoint {_selectionRect.x + camera->x, _selectionRect.y + camera->y, width, height };
+  // SDL_Log("worldPoint %d %d %d %d", worldPoint.x, worldPoint.y, worldPoint.w, worldPoint.h);
+
+  _selectionCollider = worldPoint;
   if (_selectionRect.w < 0)
   {
-    _selectionCollider.x = _endSelection.x;
+    _selectionCollider.x = endSelectionWP.x;
     _selectionCollider.w = glm::abs(_selectionCollider.w);
   }
   if (_selectionRect.h < 0)
   {
-    _selectionCollider.y = _endSelection.y;
+    _selectionCollider.y = endSelectionWP.y;
     _selectionCollider.h = glm::abs(_selectionCollider.h);
   }
   // SDL_Log("_selectionCollider %d %d %d %d", _selectionCollider.x, _selectionCollider.y, _selectionCollider.w, _selectionCollider.h);
@@ -253,6 +305,7 @@ void Game::UpdateSelectionRect()
 
 void Game::GameObjectSelection()
 {
+  //FIXME: selection not working when moving camera
   _selectedUnits.clear();
   for (auto go : _gameobjects)
   {
@@ -291,36 +344,41 @@ void Game::LoadMap()
   int height = map["height"];
   int tileCount = map["tilecount"];
   sol::table tiles = map["tiles"];
-  SDL_Log("w=%i h=%i", width, height);
+  // SDL_Log("w=%i h=%i", width, height);
 
-  //TODO: refactor
-  // SDL_Rect clips[tileCount+1];
-  // clips[0] = {};
-  // for(int i=1; i <= tileCount; ++i)
-  // {
-  //   SDL_Rect rect = {(i-1) * TILE_SIZE , 0, TILE_SIZE, TILE_SIZE};
-  //   clips[i] = rect;
-  //   SDL_Log("i=%i x=%i", i, rect.x);
-  // }
-
-  int x, y = 0;
+  int x = 0;
+  int y = 0;
   int countX = 0;
   for(int i = 1; i <= tiles.size(); ++i)
   {
     int type = tiles.get<int>(i);
-    SDL_Log("i=%i type=%i x=%i  y=%i", i, type, x, y);
+    // SDL_Log("i=%i type=%i x=%i  y=%i", i, type, x, y);
     
-    SDL_Rect source = {(type-1) * TILE_SIZE, 0, TILE_SIZE, TILE_SIZE};
+    SDL_Rect source {(type-1) * TILE_SIZE, 0, TILE_SIZE, TILE_SIZE};
     
     _tiles.push_back(new Tile(x, y, source, assetManager->GetTexture("tiles-spritesheet")));
     
     x += TILE_SIZE;
     if((i % width) == 0)
     {
-      SDL_Log("<br> %i", i);
+      // SDL_Log("<br> %i", i);
       x = 0;
       y += TILE_SIZE;
     }
   }
 
+}
+
+void Game::UpdateCamera(int x, int y)
+{
+  camera->x += x;
+  camera->y += y;
+
+  camera->x = camera->x < 0 ? 0 : camera->x;
+  camera->y = camera->y < 0 ? 0 : camera->y;
+  
+  camera->x = camera->x > (MAP_WIDTH - camera->w) ? (MAP_WIDTH - camera->w) : camera->x;
+  camera->y = camera->y > (MAP_HEIGHT - camera->h) ? (MAP_HEIGHT - camera->h) : camera->y;
+
+  SDL_Log("camx=%i camy=%i", camera->x, camera->y);
 }

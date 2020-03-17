@@ -22,10 +22,11 @@ private:
   //TODO: move Tile to a ECS component
   std::vector<Tile*> _tiles;
 
-  SDL_Point _startSelection;
-  SDL_Point _endSelection;
-  SDL_Rect _selectionRect;
-  SDL_Rect _selectionCollider;
+  
+  SDL_Point _startSelection;    //screen point  
+  SDL_Point _endSelection;      //screen point
+  SDL_Rect _selectionRect;      //screen point
+  SDL_Rect _selectionCollider;  //world point
   bool _rangeSelection;
   bool _singleSelection;
 
@@ -41,18 +42,19 @@ private:
   // AssetManager* _assetManager;
 
 public:
-  //TODO: review this public static var
   static SDL_Renderer* renderer;
   static AssetManager* assetManager;
+  static SDL_Rect* camera;
   
   Game();
-  ~Game(){};
+  ~Game(){}
   bool Init(int width, int height);
   void Quit();
   void ProcessInput();
   void Update();
   void Render();
-  bool IsRunning()const { return _isRunning; }
+  bool IsRunning() const { return _isRunning; }
+  void UpdateCamera(int x, int y);
 };
 
 #endif

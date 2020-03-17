@@ -8,8 +8,8 @@
 class AssetManager
 {
 public:
-  AssetManager(){};
-  ~AssetManager(){};
+  AssetManager();
+  ~AssetManager();
   void Release();
   void AddTexture(std::string id, const char* filePath);
   SDL_Texture* GetTexture(std::string id);

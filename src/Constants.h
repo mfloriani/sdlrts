@@ -1,14 +1,19 @@
 #ifndef CONSTANTS_H
 #define CONSTANTS_H
 
-//TODO: replace define per const
+const int WINDOW_WIDTH {1024};
+const int WINDOW_HEIGHT {768};
 
-#define WINDOW_WIDTH 1600
-#define WINDOW_HEIGHT 900
-#define FPS 60
-#define FRAME_LENGTH 1000 / FPS
+//TODO: decide whether to use fixed or load from map file
+const int MAP_WIDTH {1600};
+const int MAP_HEIGHT {1184};
 
-#define SPRITESHEET_SIZE 15
-#define TILE_SIZE 32
+const int FPS {60};
+const float FRAME_LENGTH {1000 / FPS};
+
+const int SPRITESHEET_SIZE {15};
+const int TILE_SIZE {32};
+
+const int CAMERA_VELOCITY = 10;
 
 #endif
