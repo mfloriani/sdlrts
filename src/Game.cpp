@@ -264,6 +264,7 @@ void Game::Render()
     SDL_RenderFillRect(renderer, &_selectionRect);
   }
 
+  //TODO: turn it to a animation to show where the object will move
   for (auto target : _targets)
   {
     SDL_SetRenderDrawColor(renderer, 252, 244, 3, 255);
